@@ -3,7 +3,6 @@ package bytes
 import (
 	"io"
 	"unicode/utf8"
-	"unsafe"
 
 	"github.com/gohryt/asphyxia-core/memory"
 )
@@ -16,14 +15,6 @@ func (buffer Buffer) Clone() Buffer {
 	clone := make(Buffer, len(buffer))
 	copy(clone, buffer)
 	return clone
-}
-
-func (buffer Buffer) AsString() string {
-	return unsafe.String(unsafe.SliceData(buffer), len(buffer))
-}
-
-func (buffer *Buffer) Reset() {
-	*buffer = (*buffer)[:0]
 }
 
 func (buffer *Buffer) Set(source []byte) {
