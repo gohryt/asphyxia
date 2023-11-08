@@ -1,6 +1,7 @@
 package runtime
 
 import (
+	"runtime"
 	"unsafe"
 )
 
@@ -16,12 +17,14 @@ type (
 		Length int
 	}
 
-	Any struct {
+	InterfaceEmpty struct {
 		Type unsafe.Pointer
 		Data unsafe.Pointer
 	}
 )
 
-func As[AS, FROM any](from *FROM) *AS {
-	return (*AS)(unsafe.Pointer(from))
+var GOOS = runtime.GOOS
+
+func As[T_as, T_from any](from *T_from) *T_as {
+	return (*T_as)(unsafe.Pointer(from))
 }
