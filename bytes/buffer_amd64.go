@@ -2,14 +2,14 @@
 
 package bytes
 
-func reset(buffer *Buffer)
+func Reset(buffer *Buffer)
 
 func (buffer *Buffer) Reset() {
-	reset(buffer)
+	Reset(buffer)
 }
 
-func asString(*Buffer) string
+func String(*Buffer) string
 
-func (buffer *Buffer) AsString() string {
-	return asString(buffer)
+func (buffer *Buffer) String() string {
+	return String(buffer)
 }

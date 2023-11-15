@@ -19,7 +19,7 @@ func TestReset(t *testing.T) {
 
 func TestAsString(t *testing.T) {
 	b := bytes.Buffer(ExampleString)
-	s := b.AsString()
+	s := b.String()
 
 	if s != ExampleString {
 		t.Fatal(s)

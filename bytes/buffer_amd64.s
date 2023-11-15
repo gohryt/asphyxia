@@ -1,13 +1,13 @@
 #include "textflag.h"
 
-// func reset(buffer *Buffer)
-TEXT ·reset(SB), NOSPLIT, $0-8
+// func Reset(buffer *Buffer)
+TEXT ·Reset(SB), NOSPLIT, $0-8
 	MOVQ buffer+0(FP), AX
     MOVQ $0, 8(AX)
 	RET
 
-// func asString(buffer *Buffer) string
-TEXT ·asString(SB), NOSPLIT, $0-24
+// func String(buffer *Buffer) string
+TEXT ·String(SB), NOSPLIT, $0-24
 	MOVQ buffer+0(FP), AX
 	MOVQ 0(AX), BX
 	MOVQ 8(AX), CX
