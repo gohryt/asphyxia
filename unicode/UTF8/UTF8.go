@@ -1,6 +1,3 @@
-// Note: keep in sync with "unicode/utf8"
-// Description: This is pseudo-package created because of need in private properties of official go's utf8 package
-
 package UTF8
 
 const (

@@ -23,7 +23,10 @@ type (
 	}
 )
 
-var GOOS = runtime.GOOS
+var (
+	GOOS   = runtime.GOOS
+	GOARCH = runtime.GOARCH
+)
 
 func As[T_as, T_from any](from *T_from) *T_as {
 	return (*T_as)(unsafe.Pointer(from))
