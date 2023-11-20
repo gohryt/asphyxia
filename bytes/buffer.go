@@ -11,10 +11,10 @@ type (
 	Buffer []byte
 )
 
-func (buffer Buffer) Clone() Buffer {
-	clone := make(Buffer, len(buffer))
-	copy(clone, buffer)
-	return clone
+func (buffer *Buffer) Clone() *Buffer {
+	clone := make(Buffer, len(*buffer))
+	copy(clone, *buffer)
+	return &clone
 }
 
 func (buffer *Buffer) Set(source []byte) {
