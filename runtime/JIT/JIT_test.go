@@ -9,7 +9,7 @@ import (
 var test func()
 
 func TestAssemble(t *testing.T) {
-	builder := JIT.Builder("x")
+	builder := JIT.Builder()
 
 	JIT.Assemble(builder, &test)
 

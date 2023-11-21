@@ -11,7 +11,7 @@ type (
 	}
 )
 
-func Builder(name string) *builder {
+func Builder() *builder {
 	return &builder{
 		binary: []uint16{
 			0x48c7, 0xc001, 0x0, // mov %rax,$0x1
