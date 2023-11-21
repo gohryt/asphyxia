@@ -28,8 +28,9 @@ func Builder(name string) *builder {
 
 func Assemble[T_function any](builder *builder, function *T_function) error {
 	binary := builder.binary
+	l := len(binary) * 2
 
-	executablePrintFunc, err := syscall.Mmap(-1, 0, 128, syscall.PROT_READ|syscall.PROT_WRITE|syscall.PROT_EXEC, syscall.MAP_PRIVATE|syscall.MAP_ANONYMOUS)
+	executable, err := syscall.Mmap(-1, 0, l, syscall.PROT_READ|syscall.PROT_WRITE|syscall.PROT_EXEC, syscall.MAP_PRIVATE|syscall.MAP_ANONYMOUS)
 	if err != nil {
 		return err
 	}
@@ -37,13 +38,13 @@ func Assemble[T_function any](builder *builder, function *T_function) error {
 	j := 0
 
 	for i := range binary {
-		executablePrintFunc[j] = byte(binary[i] >> 8)
-		executablePrintFunc[j+1] = byte(binary[i])
+		executable[j] = byte(binary[i] >> 8)
+		executable[j+1] = byte(binary[i])
 		j = j + 2
 	}
 
-	unsafePrintFunc := (uintptr)(unsafe.Pointer(&executablePrintFunc))
+	functionPointer := (uintptr)(unsafe.Pointer(&executable))
+	*function = *(*T_function)(unsafe.Pointer(&functionPointer))
 
-	*function = *(*T_function)(unsafe.Pointer(&unsafePrintFunc))
 	return nil
 }

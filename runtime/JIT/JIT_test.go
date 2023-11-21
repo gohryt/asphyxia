@@ -11,7 +11,7 @@ var test func()
 func TestAssemble(t *testing.T) {
 	builder := JIT.Builder("x")
 
-	JIT.Assemble[func()](builder, &test)
+	JIT.Assemble(builder, &test)
 
 	test()
 }
