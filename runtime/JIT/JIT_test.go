@@ -3,7 +3,7 @@ package JIT_test
 import (
 	"testing"
 
-	"github.com/gohryt/asphyxia-core/runtime/JIT"
+	"github.com/gohryt/asphyxia/runtime/JIT"
 )
 
 var test func()

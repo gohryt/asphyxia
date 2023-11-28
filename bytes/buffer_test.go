@@ -3,7 +3,7 @@ package bytes_test
 import (
 	"testing"
 
-	"github.com/gohryt/asphyxia-core/bytes"
+	"github.com/gohryt/asphyxia/bytes"
 )
 
 var ExampleString = "example"

@@ -4,7 +4,7 @@ import (
 	"io"
 	"unicode/utf8"
 
-	"github.com/gohryt/asphyxia-core/memory"
+	"github.com/gohryt/asphyxia/memory"
 )
 
 type (

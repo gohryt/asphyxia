@@ -3,7 +3,7 @@ package runtime_test
 import (
 	"testing"
 
-	"github.com/gohryt/asphyxia-core/runtime"
+	"github.com/gohryt/asphyxia/runtime"
 )
 
 type (
