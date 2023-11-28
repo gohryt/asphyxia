@@ -7,13 +7,13 @@ import (
 
 type (
 	builder struct {
-		binary []uint16
+		operands []uint16
 	}
 )
 
 func Builder() *builder {
 	return &builder{
-		binary: []uint16{
+		operands: []uint16{
 			0x48c7, 0xc001, 0x0, // mov %rax,$0x1
 			0x48, 0xc7c7, 0x100, 0x0, // mov %rdi,$0x1
 			0x48c7, 0xc20c, 0x0, // mov 0x13, %rdx
@@ -27,8 +27,8 @@ func Builder() *builder {
 }
 
 func Assemble[T_function any](builder *builder, function *T_function) error {
-	binary := builder.binary
-	l := len(binary) * 2
+	operands := builder.operands
+	l := len(operands) * 2
 
 	executable, err := syscall.Mmap(-1, 0, l, syscall.PROT_READ|syscall.PROT_WRITE|syscall.PROT_EXEC, syscall.MAP_PRIVATE|syscall.MAP_ANONYMOUS)
 	if err != nil {
@@ -37,9 +37,9 @@ func Assemble[T_function any](builder *builder, function *T_function) error {
 
 	j := 0
 
-	for i := range binary {
-		executable[j] = byte(binary[i] >> 8)
-		executable[j+1] = byte(binary[i])
+	for _, operand := range operands {
+		executable[j] = byte(operand >> 8)
+		executable[j+1] = byte(operand)
 		j = j + 2
 	}
 
