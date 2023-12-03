@@ -1,6 +1,7 @@
 package JIT
 
 import (
+	"log"
 	"syscall"
 	"unsafe"
 )
