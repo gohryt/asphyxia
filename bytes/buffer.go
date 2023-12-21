@@ -11,31 +11,39 @@ type (
 	Buffer []byte
 )
 
-func (buffer *Buffer) Clone() *Buffer {
+func Reset(buffer *Buffer) {
+	*buffer = (*buffer)[:0]
+}
+
+func String(buffer *Buffer) string {
+	return string(*buffer)
+}
+
+func Clone(buffer *Buffer) *Buffer {
 	clone := make(Buffer, len(*buffer))
 	copy(clone, *buffer)
 	return &clone
 }
 
-func (buffer *Buffer) Set(source []byte) {
+func Set(buffer *Buffer, source []byte) {
 	*buffer = append((*buffer)[:0], source...)
 }
 
-func (buffer *Buffer) SetString(source string) {
+func SetString(buffer *Buffer, source string) {
 	*buffer = append((*buffer)[:0], source...)
 }
 
-func (buffer *Buffer) Write(source []byte) (n int, err error) {
+func Write(buffer *Buffer, source []byte) (n int, err error) {
 	*buffer = append(*buffer, source...)
 	return len(source), nil
 }
 
-func (buffer *Buffer) WriteByte(source byte) (err error) {
+func WriteByte(buffer *Buffer, source byte) (err error) {
 	*buffer = append(*buffer, source)
 	return
 }
 
-func (buffer *Buffer) WriteRune(source rune) (n int, err error) {
+func WriteRune(buffer *Buffer, source rune) (n int, err error) {
 	slice := *buffer
 	l := len(slice)
 
@@ -54,12 +62,12 @@ func (buffer *Buffer) WriteRune(source rune) (n int, err error) {
 	return
 }
 
-func (buffer *Buffer) WriteString(source string) (n int, err error) {
+func WriteString(buffer *Buffer, source string) (n int, err error) {
 	*buffer = append(*buffer, source...)
 	return len(source), nil
 }
 
-func (buffer *Buffer) ReadFrom(source io.Reader) (n int64, err error) {
+func ReadFrom(buffer *Buffer, source io.Reader) (n int64, err error) {
 	slice := *buffer
 	l := len(slice)
 	r := 0
