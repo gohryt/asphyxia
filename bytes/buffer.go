@@ -1,9 +1,9 @@
 package bytes
 
 import (
-	"io"
 	"unicode/utf8"
 
+	"github.com/gohryt/asphyxia/io"
 	"github.com/gohryt/asphyxia/memory"
 )
 
@@ -25,25 +25,30 @@ func Clone(buffer *Buffer) *Buffer {
 	return &clone
 }
 
-func Set(buffer *Buffer, source []byte) {
-	*buffer = append((*buffer)[:0], source...)
+func Set(buffer *Buffer, value []byte) {
+	*buffer = append((*buffer)[:0], value...)
 }
 
-func SetString(buffer *Buffer, source string) {
-	*buffer = append((*buffer)[:0], source...)
+func SetString(buffer *Buffer, value string) {
+	*buffer = append((*buffer)[:0], value...)
 }
 
-func Write(buffer *Buffer, source []byte) (n int, err error) {
-	*buffer = append(*buffer, source...)
-	return len(source), nil
+func Write(buffer *Buffer, value []byte) (n int, err error) {
+	*buffer = append(*buffer, value...)
+	return len(value), nil
 }
 
-func WriteByte(buffer *Buffer, source byte) (err error) {
-	*buffer = append(*buffer, source)
+func WriteString(buffer *Buffer, value string) (n int, err error) {
+	*buffer = append(*buffer, value...)
+	return len(value), nil
+}
+
+func WriteByte(buffer *Buffer, value byte) (err error) {
+	*buffer = append(*buffer, value)
 	return
 }
 
-func WriteRune(buffer *Buffer, source rune) (n int, err error) {
+func WriteRune(buffer *Buffer, value rune) (n int, err error) {
 	slice := *buffer
 	l := len(slice)
 
@@ -56,18 +61,13 @@ func WriteRune(buffer *Buffer, source rune) (n int, err error) {
 		slice = reallocation
 	}
 
-	n = utf8.EncodeRune(slice[l:size], source)
+	n = utf8.EncodeRune(slice[l:size], value)
 
 	*buffer = slice[:(l + n)]
 	return
 }
 
-func WriteString(buffer *Buffer, source string) (n int, err error) {
-	*buffer = append(*buffer, source...)
-	return len(source), nil
-}
-
-func ReadFrom(buffer *Buffer, source io.Reader) (n int64, err error) {
+func ReadFrom[T_from any](buffer *Buffer, from io.Reader[T_from]) (n int64, err error) {
 	slice := *buffer
 	l := len(slice)
 	r := 0
@@ -77,7 +77,7 @@ reallocation:
 
 	if size == 0 {
 		size = 64
-	} else if size < memory.Kilobyte {
+	} else if size < (8 * memory.Kilobyte) {
 		size *= 4
 	} else {
 		size *= 2
@@ -89,7 +89,7 @@ reallocation:
 	slice = reallocation
 
 read:
-	r, err = source.Read(slice[l:size])
+	r, err = from.Read(from.Object, slice[l:size])
 
 	n += int64(r)
 	l += r

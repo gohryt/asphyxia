@@ -1,38 +1,34 @@
 package runner
 
 import (
-	"context"
 	"os"
 	"os/signal"
-	"sync"
 	"sync/atomic"
+	"time"
+	"unsafe"
+
+	"github.com/gohryt/asphyxia/async/context"
 )
 
 type (
 	Action uint64
 
 	Group struct {
-		shutdown context.Context
-		cancel   context.CancelFunc
-		actions  chan task
+		shutdown *context.Context
 
-		locker  sync.Mutex
-		onStart []task
-		onClose []task
-		on      sync.Map
+		onStart []todo
+		onClose []todo
 
-		registered uint32
-		async      bool
+		wait uint64
 	}
 
-	Task[T_resource any] func(ctx context.Context, group *Group, resource *T_resource) error
+	Task[T_resource any] func(ctx *context.Context, group *Group, resource *T_resource)
 
-	wrapper func(ctx context.Context, group *Group, resource, function any) error
+	task func(ctx *context.Context, group *Group, to unsafe.Pointer)
 
-	task struct {
-		resource any
-		function any
-		wrapper  wrapper
+	todo struct {
+		to unsafe.Pointer
+		do task
 	}
 )
 
@@ -42,62 +38,71 @@ const (
 	ActionClose
 )
 
-func Prepare(parent context.Context, signals ...os.Signal) (group *Group, shutdown context.Context) {
+func New(parent *context.Context, signals ...os.Signal) (group *Group, shutdown *context.Context) {
 	group = &Group{
-		registered: uint32(ActionClose),
+		shutdown: context.WithCancel(),
 	}
 
-	if len(signals) > 0 {
-		group.shutdown, group.cancel = signal.NotifyContext(parent, signals...)
-	} else {
-		group.shutdown, group.cancel = context.WithCancel(parent)
-	}
+	notifier := make(chan os.Signal, 1)
+	signal.Notify(notifier, signals...)
+
+	go func() {
+		select {
+		case <-shutdown.Done(shutdown.Context):
+		case <-notifier:
+			shutdown.Cancel(shutdown.Context)
+		}
+	}()
 
 	return group, group.shutdown
 }
 
 func On[T_resource any](action Action, group *Group, resource *T_resource, function Task[T_resource]) {
-	task := task{
-		resource: resource,
-		function: function,
-		wrapper:  wrap[T_resource],
-	}
-
-	if group.async {
-		group.locker.Lock()
-		defer group.locker.Unlock()
+	todo := todo{
+		to: unsafe.Pointer(resource),
+		do: *(*task)(unsafe.Pointer(&function)),
 	}
 
 	switch action {
 	case ActionStart:
-		group.onStart = append(group.onStart, task)
+		group.onStart = append(group.onStart, todo)
 	case ActionClose:
-		group.onClose = append(group.onClose, task)
+		group.onClose = append(group.onClose, todo)
 	}
 }
 
-func wrap[T_resource any](ctx context.Context, group *Group, resource, function any) error {
-	return function.(Task[T_resource])(ctx, group, resource.(*T_resource))
+func Send(group *Group, action Action) {
+	if action == ActionClose {
+		group.shutdown.Cancel(group.shutdown.Context)
+	}
 }
 
-func (group *Group) Register() uint32 {
-	return atomic.AddUint32(&group.registered, 1)
+func wrap(ctx *context.Context, group *Group, todo todo) {
+	atomic.AddUint64(&group.wait, 1)
+
+	todo.do(ctx, group, todo.to)
+
+	if atomic.AddUint64(&group.wait, ^uint64(0)) == 0 {
+		group.shutdown.Cancel(group.shutdown.Context)
+	}
 }
 
-func (group *Group) Wait() {
-	shutdown := group.shutdown
-
-	for _, task := range group.onStart {
-		go task.wrapper(shutdown, group, task.resource, task.function)
+func Wait(group *Group, timeout time.Duration) {
+	for _, todo := range group.onStart {
+		go wrap(group.shutdown, group, todo)
 	}
 
-	select {
-	case <-shutdown.Done():
+	<-group.shutdown.Done(group.shutdown.Context)
+
+	if timeout > 0 {
+		group.shutdown = context.WithTimeout(timeout)
+	} else {
+		group.shutdown = context.WithCancel()
 	}
 
-	ctx := context.Background()
-
-	for _, task := range group.onClose {
-		go task.wrapper(ctx, group, task.resource, task.function)
+	for _, todo := range group.onClose {
+		go wrap(group.shutdown, group, todo)
 	}
+
+	<-group.shutdown.Done(group.shutdown.Context)
 }
