@@ -1,20 +1,20 @@
 package runner
 
 import (
+	"context"
 	"os"
 	"os/signal"
 	"sync/atomic"
 	"time"
 	"unsafe"
-
-	"github.com/gohryt/asphyxia/async/context"
 )
 
 type (
 	Action uint64
 
 	Group struct {
-		shutdown *context.Context
+		shutdown context.Context
+		cancel   context.CancelFunc
 
 		onStart []todo
 		onClose []todo
@@ -22,9 +22,9 @@ type (
 		wait uint64
 	}
 
-	Task[T_resource any] func(ctx *context.Context, group *Group, resource *T_resource)
+	Task[T_resource any] func(ctx context.Context, group *Group, resource *T_resource)
 
-	task func(ctx *context.Context, group *Group, to unsafe.Pointer)
+	task func(ctx context.Context, group *Group, to unsafe.Pointer)
 
 	todo struct {
 		to unsafe.Pointer
@@ -38,21 +38,9 @@ const (
 	ActionClose
 )
 
-func New(parent *context.Context, signals ...os.Signal) (group *Group, shutdown *context.Context) {
-	group = &Group{
-		shutdown: context.WithCancel(),
-	}
-
-	notifier := make(chan os.Signal, 1)
-	signal.Notify(notifier, signals...)
-
-	go func() {
-		select {
-		case <-shutdown.Done(shutdown.Context):
-		case <-notifier:
-			shutdown.Cancel(shutdown.Context)
-		}
-	}()
+func New(parent context.Context, signals ...os.Signal) (group *Group, shutdown context.Context) {
+	group = new(Group)
+	group.shutdown, group.cancel = signal.NotifyContext(context.Background(), signals...)
 
 	return group, group.shutdown
 }
@@ -73,17 +61,17 @@ func On[T_resource any](action Action, group *Group, resource *T_resource, funct
 
 func Send(group *Group, action Action) {
 	if action == ActionClose {
-		group.shutdown.Cancel(group.shutdown.Context)
+		group.cancel()
 	}
 }
 
-func wrap(ctx *context.Context, group *Group, todo todo) {
+func wrap(ctx context.Context, group *Group, todo todo) {
 	atomic.AddUint64(&group.wait, 1)
 
 	todo.do(ctx, group, todo.to)
 
 	if atomic.AddUint64(&group.wait, ^uint64(0)) == 0 {
-		group.shutdown.Cancel(group.shutdown.Context)
+		group.cancel()
 	}
 }
 
@@ -92,17 +80,19 @@ func Wait(group *Group, timeout time.Duration) {
 		go wrap(group.shutdown, group, todo)
 	}
 
-	<-group.shutdown.Done(group.shutdown.Context)
+	<-group.shutdown.Done()
+
+	background := context.Background()
 
 	if timeout > 0 {
-		group.shutdown = context.WithTimeout(timeout)
+		group.shutdown, group.cancel = context.WithTimeout(background, timeout)
 	} else {
-		group.shutdown = context.WithCancel()
+		group.shutdown, group.cancel = context.WithCancel(background)
 	}
 
 	for _, todo := range group.onClose {
 		go wrap(group.shutdown, group, todo)
 	}
 
-	<-group.shutdown.Done(group.shutdown.Context)
+	<-group.shutdown.Done()
 }

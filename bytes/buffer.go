@@ -1,9 +1,9 @@
 package bytes
 
 import (
+	"io"
 	"unicode/utf8"
 
-	"github.com/gohryt/asphyxia/io"
 	"github.com/gohryt/asphyxia/memory"
 )
 
@@ -11,44 +11,44 @@ type (
 	Buffer []byte
 )
 
-func Reset(buffer *Buffer) {
+func (buffer *Buffer) Reset() {
 	*buffer = (*buffer)[:0]
 }
 
-func String(buffer *Buffer) string {
+func (buffer *Buffer) String() string {
 	return string(*buffer)
 }
 
-func Clone(buffer *Buffer) *Buffer {
+func (buffer *Buffer) Clone() *Buffer {
 	clone := make(Buffer, len(*buffer))
 	copy(clone, *buffer)
 	return &clone
 }
 
-func Set(buffer *Buffer, value []byte) {
+func (buffer *Buffer) Set(value []byte) {
 	*buffer = append((*buffer)[:0], value...)
 }
 
-func SetString(buffer *Buffer, value string) {
+func (buffer *Buffer) SetString(value string) {
 	*buffer = append((*buffer)[:0], value...)
 }
 
-func Write(buffer *Buffer, value []byte) (n int, err error) {
+func (buffer *Buffer) Write(value []byte) (n int, err error) {
 	*buffer = append(*buffer, value...)
 	return len(value), nil
 }
 
-func WriteString(buffer *Buffer, value string) (n int, err error) {
+func (buffer *Buffer) WriteString(value string) (n int, err error) {
 	*buffer = append(*buffer, value...)
 	return len(value), nil
 }
 
-func WriteByte(buffer *Buffer, value byte) (err error) {
+func (buffer *Buffer) WriteByte(value byte) (err error) {
 	*buffer = append(*buffer, value)
 	return
 }
 
-func WriteRune(buffer *Buffer, value rune) (n int, err error) {
+func (buffer *Buffer) WriteRune(value rune) (n int, err error) {
 	slice := *buffer
 	l := len(slice)
 
@@ -67,7 +67,7 @@ func WriteRune(buffer *Buffer, value rune) (n int, err error) {
 	return
 }
 
-func ReadFrom[T_from any](buffer *Buffer, from io.Reader[T_from]) (n int64, err error) {
+func (buffer *Buffer) ReadFrom(from io.Reader) (n int64, err error) {
 	slice := *buffer
 	l := len(slice)
 	r := 0
@@ -89,7 +89,7 @@ reallocation:
 	slice = reallocation
 
 read:
-	r, err = from.Read(from.Object, slice[l:size])
+	r, err = from.Read(slice[l:size])
 
 	n += int64(r)
 	l += r
