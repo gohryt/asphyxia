@@ -1,11 +1,8 @@
 package random
 
 import (
-	"math/rand"
-	"time"
+	"math/rand/v2"
 )
-
-var GlobalRand = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 func Slice[T any](source []T, length int) []T {
 	max := len(source)
@@ -13,7 +10,7 @@ func Slice[T any](source []T, length int) []T {
 	target := make([]T, length)
 
 	for i := range target {
-		target[i] = source[GlobalRand.Intn(max)]
+		target[i] = source[rand.IntN(max)]
 	}
 
 	return target
