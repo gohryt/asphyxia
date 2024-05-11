@@ -1,16 +1,14 @@
 package env
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/joho/godotenv"
 )
 
 type (
@@ -25,9 +23,77 @@ type (
 
 var ErrNoReqiredVariable = errors.New("no required variable")
 
-// TODO: error while parse slice
-//
-// tags from .env goes to lowercase. ENV_NAME == env_name
+var typeForDuration = reflect.TypeFor[time.Duration]()
+
+func Load(pathList []string) error {
+	if pathList == nil {
+		pathList = []string{".env"}
+	}
+
+	var (
+		path    string
+		errList []error
+		err     error
+	)
+
+	for _, path = range pathList {
+		err = LoadFile(path)
+		if err != nil {
+			errList = append(errList, err)
+		}
+	}
+
+	return errors.Join(errList...)
+}
+
+func LoadFile(path string) error {
+	file, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+
+	var (
+		text           string
+		equalSignIndex int
+		key            string
+		value          string
+	)
+
+	for scanner.Scan() {
+		text = scanner.Text()
+
+		if text == "" || strings.HasPrefix(text, "#") {
+			continue
+		}
+
+		equalSignIndex = strings.IndexByte(text, '=')
+
+		if equalSignIndex < 0 {
+			continue
+		}
+
+		key, value = text[:equalSignIndex], text[equalSignIndex+1:]
+
+		if len(value) > 2 && strings.HasPrefix(value, `"`) && strings.HasSuffix(value, `"`) {
+			value = value[1 : len(value)-1]
+		}
+
+		if key == "" || value == "" {
+			continue
+		}
+
+		err = os.Setenv(key, value)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func Parse[T_configuration any](optionList ...any) (*T_configuration, error) {
 	pathList, prefix := []string(nil), ""
 
@@ -40,7 +106,7 @@ func Parse[T_configuration any](optionList ...any) (*T_configuration, error) {
 		}
 	}
 
-	err := godotenv.Load(pathList...)
+	err := Load(pathList)
 	if err != nil {
 		return nil, err
 	}
@@ -55,23 +121,22 @@ func Parse[T_configuration any](optionList ...any) (*T_configuration, error) {
 	return configuration, err
 }
 
-func parse(value reflect.Value, name, _default, required string) error {
-	kind := value.Kind()
+func parse(value reflect.Value, n, d, r string) error {
+	k := value.Kind()
+	t := value.Type()
 
-	switch kind {
+	switch k {
 	case reflect.Pointer:
-		return parse(value.Elem(), name, _default, required)
+		return parse(value.Elem(), n, d, r)
 	case reflect.Struct:
-		_type := value.Type()
-
-		if name != "" && !strings.HasSuffix(name, "_") {
-			name += "_"
+		if n != "" && !strings.HasSuffix(n, "_") {
+			n += "_"
 		}
 
-		for i := 0; i < _type.NumField(); i++ {
-			field := _type.Field(i)
+		for i := 0; i < t.NumField(); i++ {
+			field := t.Field(i)
 
-			err := parse(value.Field(i), (name + field.Tag.Get("env")), field.Tag.Get("default"), field.Tag.Get("required"))
+			err := parse(value.Field(i), (n + field.Tag.Get("name")), field.Tag.Get("default"), field.Tag.Get("required"))
 			if err != nil {
 				return err
 			}
@@ -80,31 +145,41 @@ func parse(value reflect.Value, name, _default, required string) error {
 		return nil
 	}
 
-	if name == "" {
+	if n == "" {
 		return nil
 	}
 
-	read := os.Getenv(name)
+	read := os.Getenv(n)
 	if read == "" {
-		read = _default
+		read = d
 	}
 
 	if read == "" {
-		if required == "true" {
-			return fmt.Errorf("%w: %s", ErrNoReqiredVariable, name)
+		if r == "true" {
+			return fmt.Errorf("%w: %s", ErrNoReqiredVariable, n)
 		}
 
 		return nil
 	}
 
-	typeDuration := reflect.TypeOf(time.Duration(0))
-	typeSliceString := reflect.TypeOf(reflect.TypeOf([]string{}))
+	switch k {
+	case reflect.Slice:
+		e := t.Elem()
 
-	switch kind {
+		switch e.Kind() {
+		case reflect.String:
+			data := reflect.MakeSlice(t, 0, strings.Count(read, ","))
+
+			for _, i := range strings.Split(read, ",") {
+				data = reflect.Append(data, reflect.ValueOf(i))
+			}
+
+			value.Set(data)
+		}
 	case reflect.String:
 		value.SetString(read)
 	case reflect.Int64:
-		if value.Type() == typeDuration {
+		if value.Type() == typeForDuration {
 			d, err := time.ParseDuration(read)
 			if err != nil {
 				return err
@@ -154,17 +229,6 @@ func parse(value reflect.Value, name, _default, required string) error {
 		}
 
 		value.SetBool(i)
-	case reflect.Slice:
-		log.Println(value.Type(), typeSliceString)
-		if value.Type() == typeSliceString {
-			data := reflect.MakeSlice(typeSliceString, 0, 0)
-
-			for _, i := range strings.Split(read, "") {
-				data = reflect.Append(data, reflect.ValueOf(i))
-			}
-
-			value.Set(data)
-		}
 	}
 
 	return nil

@@ -8,7 +8,7 @@ import (
 )
 
 type String struct {
-	String string `env:"STRING"`
+	String string `name:"STRING"`
 }
 
 func TestParseString(t *testing.T) {
@@ -23,10 +23,10 @@ func TestParseString(t *testing.T) {
 }
 
 type Int struct {
-	Int8  int8  `env:"INT_8"`
-	Int16 int16 `env:"INT_16"`
-	Int32 int32 `env:"INT_32"`
-	Int64 int64 `env:"INT_64"`
+	Int8  int8  `name:"INT_8"`
+	Int16 int16 `name:"INT_16"`
+	Int32 int32 `name:"INT_32"`
+	Int64 int64 `name:"INT_64"`
 }
 
 func TestParseInt(t *testing.T) {
@@ -53,10 +53,10 @@ func TestParseInt(t *testing.T) {
 }
 
 type Uint struct {
-	Uint8  uint8  `env:"UINT_8"`
-	Uint16 uint16 `env:"UINT_16"`
-	Uint32 uint32 `env:"UINT_32"`
-	Uint64 uint64 `env:"UINT_64"`
+	Uint8  uint8  `name:"UINT_8"`
+	Uint16 uint16 `name:"UINT_16"`
+	Uint32 uint32 `name:"UINT_32"`
+	Uint64 uint64 `name:"UINT_64"`
 }
 
 func TestParseUint(t *testing.T) {
@@ -83,8 +83,8 @@ func TestParseUint(t *testing.T) {
 }
 
 type Float struct {
-	Float32 float32 `env:"FLOAT_32"`
-	Float64 float64 `env:"FLOAT_64"`
+	Float32 float32 `name:"FLOAT_32"`
+	Float64 float64 `name:"FLOAT_64"`
 }
 
 func TestParseFloat(t *testing.T) {
@@ -103,8 +103,8 @@ func TestParseFloat(t *testing.T) {
 }
 
 type Complex struct {
-	Complex64  complex64  `env:"COMPLEX_64"`
-	Complex128 complex128 `env:"COMPLEX_128"`
+	Complex64  complex64  `name:"COMPLEX_64"`
+	Complex128 complex128 `name:"COMPLEX_128"`
 }
 
 func TestParseComplex(t *testing.T) {
@@ -123,7 +123,7 @@ func TestParseComplex(t *testing.T) {
 }
 
 type Bool struct {
-	Bool bool `env:"BOOL"`
+	Bool bool `name:"BOOL"`
 }
 
 func TestParseBool(t *testing.T) {
@@ -138,7 +138,7 @@ func TestParseBool(t *testing.T) {
 }
 
 type Slice struct {
-	Slice []string `env:"SLICE"`
+	Slice []string `name:"SLICE"`
 }
 
 func TestParseSlice(t *testing.T) {
@@ -147,18 +147,18 @@ func TestParseSlice(t *testing.T) {
 		t.Errorf("%s,%s", "TestParseSlice: error while Parse()", err.Error())
 	}
 
-	if slices.Equal(env.Slice, []string{"1", "2", "3", "4", "5"}) {
+	if !slices.Equal(env.Slice, []string{"1", "2", "3", "4", "5"}) {
 		t.Errorf("TestParseSlice: Result was incorrect, got: %v, want: %v.", env.Slice, []string{"1", "2", "3", "4", "5"})
 	}
 }
 
 type ChiledWithDefault struct {
 	String struct {
-		String string `env:"str" default:"default"`
+		String string `name:"str" default:"default"`
 		Int    struct {
-			Int  int `env:"int" default:"-1337"`
+			Int  int `name:"int" default:"-1337"`
 			Uint struct {
-				Uint uint `env:"uint" default:"420"`
+				Uint uint `name:"uint" default:"420"`
 			}
 		}
 	}
