@@ -2,7 +2,6 @@ package percent
 
 import (
 	"github.com/gohryt/asphyxia/bytes"
-	"github.com/gohryt/asphyxia/unicode/UTF8"
 )
 
 const (
@@ -13,39 +12,49 @@ const (
 func Encode(source bytes.Buffer) bytes.Buffer {
 	var (
 		i        int
+		j        int
 		capacity int
-
-		r    rune
-		size int
-		u    uint32
+		b        byte
 	)
 
 	for i < len(source) {
-		r, size = UTF8.DecodeRune(source[i:])
-		u = uint32(r)
+		b = source[i]
 
-		i += size
-
-		switch {
-		case u <= UTF8.Rune1Max:
+		if QuotedPathShouldEscapeTable[int(b)] != 0 {
 			capacity += 3
-		case u <= UTF8.Rune2Max:
-			capacity += 6
-		case u <= UTF8.Rune3Max:
-			capacity += 9
-		default:
-			capacity += 12
+		} else {
+			capacity += 1
 		}
+
+		i += 1
 	}
 
-	target := make(bytes.Buffer, 0, capacity)
+	target := make(bytes.Buffer, capacity)
 
-	for _, c := range source {
-		if QuotedPathShouldEscapeTable[int(c)] != 0 {
-			target = append(target, '%', upperhex[c>>4], upperhex[c&0xf])
-		} else {
-			target = append(target, c)
+	if capacity > len(source) {
+		i = 0
+
+		for i < len(source) {
+			b = source[i]
+
+			if QuotedPathShouldEscapeTable[int(b)] != 0 {
+				target[j+2] = upperhex[b&0xf]
+				target[j+1] = upperhex[b>>4]
+				target[j] = '%'
+
+				j += 3
+			} else {
+				target[j] = b
+
+				j += 1
+			}
+
+			i += 1
 		}
+
+		target = target[:j]
+	} else {
+		copy(target, source)
 	}
 
 	return target
@@ -54,7 +63,9 @@ func Encode(source bytes.Buffer) bytes.Buffer {
 func Decode(source bytes.Buffer) bytes.Buffer {
 	var (
 		i        int
+		j        int
 		capacity int
+		b        byte
 	)
 
 	for i < len(source) {
@@ -72,11 +83,6 @@ func Decode(source bytes.Buffer) bytes.Buffer {
 	if i > capacity {
 		i = 0
 		capacity = 0
-
-		var (
-			b byte
-			j int
-		)
 
 		for i < len(source) {
 			b = source[i]
