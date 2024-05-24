@@ -11,61 +11,54 @@ const (
 )
 
 func Encode(source bytes.Buffer) bytes.Buffer {
-	i := 0
-	c := 0
+	var (
+		i        int
+		capacity int
+
+		r    rune
+		size int
+		u    uint32
+	)
 
 	for i < len(source) {
-		rune, size := UTF8.DecodeRune(source[i:])
-		uinted := uint32(rune)
+		r, size = UTF8.DecodeRune(source[i:])
+		u = uint32(r)
 
 		i += size
 
 		switch {
-		case uinted <= UTF8.Rune1Max:
-			c += 3
-		case uinted <= UTF8.Rune2Max:
-			c += 6
-		case uinted <= UTF8.Rune3Max:
-			c += 9
+		case u <= UTF8.Rune1Max:
+			capacity += 3
+		case u <= UTF8.Rune2Max:
+			capacity += 6
+		case u <= UTF8.Rune3Max:
+			capacity += 9
 		default:
-			c += 12
+			capacity += 12
 		}
 	}
 
-	target := make(bytes.Buffer, c)
+	target := make(bytes.Buffer, 0, capacity)
 
-	if c > len(source) {
-		i = len(source) - 1
-		c -= 1
-
-		for i >= 0 {
-			byte := source[i]
-
-			i -= 1
-
-			if quotedPathShouldEscapeTable[byte] != 0 {
-				target[c] = upperhex[byte&0xf]
-				target[c-1] = upperhex[byte>>4]
-				target[c-2] = '%'
-				c -= 3
-			} else {
-				target[c] = byte
-				c -= 1
-			}
+	for _, c := range source {
+		if QuotedPathShouldEscapeTable[int(c)] != 0 {
+			target = append(target, '%', upperhex[c>>4], upperhex[c&0xf])
+		} else {
+			target = append(target, c)
 		}
-	} else {
-		copy(target, source)
 	}
 
 	return target
 }
 
 func Decode(source bytes.Buffer) bytes.Buffer {
-	c := 0
-	i := 0
+	var (
+		i        int
+		capacity int
+	)
 
 	for i < len(source) {
-		c += 1
+		capacity += 1
 
 		if source[i] == '%' {
 			i += 3
@@ -74,38 +67,43 @@ func Decode(source bytes.Buffer) bytes.Buffer {
 		}
 	}
 
-	target := make(bytes.Buffer, c)
+	target := make(bytes.Buffer, capacity)
 
-	if i > c {
+	if i > capacity {
 		i = 0
-		c = 0
+		capacity = 0
+
+		var (
+			b byte
+			j int
+		)
 
 		for i < len(source) {
-			byte := source[i]
+			b = source[i]
 
-			if byte == '%' {
-				j := i + 2
+			if b == '%' {
+				j = i + 2
 
 				if j >= len(source) {
-					copy(target[c:], source[i:])
+					copy(target[capacity:], source[i:])
 					return target
 				}
 
-				x2 := hex2intTable[source[j]]
-				x1 := hex2intTable[source[i+1]]
+				x2 := Hex2IntTable[source[j]]
+				x1 := Hex2IntTable[source[i+1]]
 
 				if x1 == 16 || x2 == 16 {
-					target[c] = '%'
+					target[capacity] = '%'
 				} else {
-					target[c] = x1<<4 | x2
+					target[capacity] = x1<<4 | x2
 					i = j
 				}
 			} else {
-				target[c] = byte
+				target[capacity] = b
 			}
 
 			i += 1
-			c += 1
+			capacity += 1
 		}
 	} else {
 		copy(target, source)
