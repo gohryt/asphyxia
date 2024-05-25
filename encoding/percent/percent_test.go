@@ -111,21 +111,31 @@ func TestDecode(t *testing.T) {
 	}
 }
 
-func BenchmarkEncodeStd(b *testing.B) {
+func BenchmarkEncodeStdLoremIpsum(b *testing.B) {
 	for i := 0; i < b.N; i += 1 {
 		_ = url.PathEscape(LoremIpsum)
+	}
+}
+
+func BenchmarkEncodeLoremIpsum(b *testing.B) {
+	for i := 0; i < b.N; i += 1 {
+		_ = percent.Encode(bytes.Buffer(LoremIpsum))
+	}
+}
+
+func BenchmarkEncodeStdUSSR(b *testing.B) {
+	for i := 0; i < b.N; i += 1 {
 		_ = url.PathEscape(USSR)
 	}
 }
 
-func BenchmarkEncode(b *testing.B) {
+func BenchmarkEncodeUSSR(b *testing.B) {
 	for i := 0; i < b.N; i += 1 {
-		_ = percent.Encode(bytes.Buffer(LoremIpsum))
 		_ = percent.Encode(bytes.Buffer(USSR))
 	}
 }
 
-func BenchmarkDecodeStd(b *testing.B) {
+func BenchmarkDecodeStdLoremIpsum(b *testing.B) {
 	err := error(nil)
 
 	for i := 0; i < b.N; i += 1 {
@@ -133,7 +143,19 @@ func BenchmarkDecodeStd(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
+	}
+}
 
+func BenchmarkDecodeLoremIpsum(b *testing.B) {
+	for i := 0; i < b.N; i += 1 {
+		_ = percent.Decode(bytes.Buffer(LoremIpsumPercent))
+	}
+}
+
+func BenchmarkDecodeStdUSSR(b *testing.B) {
+	err := error(nil)
+
+	for i := 0; i < b.N; i += 1 {
 		_, err = url.PathUnescape(USSRPercent)
 		if err != nil {
 			b.Fatal(err)
@@ -141,9 +163,8 @@ func BenchmarkDecodeStd(b *testing.B) {
 	}
 }
 
-func BenchmarkDecode(b *testing.B) {
+func BenchmarkDecodeUSSR(b *testing.B) {
 	for i := 0; i < b.N; i += 1 {
-		_ = percent.Decode(bytes.Buffer(LoremIpsumPercent))
-		_ = percent.Decode(bytes.Buffer(USSR))
+		_ = percent.Decode(bytes.Buffer(USSRPercent))
 	}
 }
