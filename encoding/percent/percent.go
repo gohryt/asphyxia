@@ -66,6 +66,9 @@ func Decode(source bytes.Buffer) bytes.Buffer {
 		j        int
 		capacity int
 		b        byte
+
+		x2 byte
+		x1 byte
 	)
 
 	for i < len(source) {
@@ -95,8 +98,8 @@ func Decode(source bytes.Buffer) bytes.Buffer {
 					return target
 				}
 
-				x2 := Hex2IntTable[source[j]]
-				x1 := Hex2IntTable[source[i+1]]
+				x2 = Hex2IntTable[source[j]]
+				x1 = Hex2IntTable[source[i+1]]
 
 				if x1 == 16 || x2 == 16 {
 					target[capacity] = '%'
