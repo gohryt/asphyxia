@@ -2,11 +2,7 @@ package percent
 
 import (
 	"github.com/gohryt/asphyxia/bytes"
-)
-
-const (
-	upperhex = "0123456789ABCDEF"
-	lowerhex = "0123456789abcdef"
+	"github.com/gohryt/asphyxia/encoding/hex"
 )
 
 func Encode(source bytes.Buffer) bytes.Buffer {
@@ -20,7 +16,7 @@ func Encode(source bytes.Buffer) bytes.Buffer {
 	for i < len(source) {
 		b = source[i]
 
-		if QuotedPathShouldEscapeTable[int(b)] != 0 {
+		if ShouldEscapeTable[int(b)] != 0 {
 			capacity += 3
 		} else {
 			capacity += 1
@@ -37,9 +33,9 @@ func Encode(source bytes.Buffer) bytes.Buffer {
 		for i < len(source) {
 			b = source[i]
 
-			if QuotedPathShouldEscapeTable[int(b)] != 0 {
-				target[j+2] = upperhex[b&0xf]
-				target[j+1] = upperhex[b>>4]
+			if ShouldEscapeTable[int(b)] != 0 {
+				target[j+2] = hex.Upper[b&0xf]
+				target[j+1] = hex.Upper[b>>4]
 				target[j] = '%'
 
 				j += 3
@@ -98,8 +94,8 @@ func Decode(source bytes.Buffer) bytes.Buffer {
 					return target
 				}
 
-				x2 = Hex2IntTable[source[j]]
-				x1 = Hex2IntTable[source[i+1]]
+				x2 = hex.Hex2IntTable[source[j]]
+				x1 = hex.Hex2IntTable[source[i+1]]
 
 				if x1 == 16 || x2 == 16 {
 					target[capacity] = '%'
@@ -108,7 +104,11 @@ func Decode(source bytes.Buffer) bytes.Buffer {
 					i = j
 				}
 			} else {
-				target[capacity] = b
+				if b == '+' {
+					target[capacity] = ' '
+				} else {
+					target[capacity] = b
+				}
 			}
 
 			i += 1
