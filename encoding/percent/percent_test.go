@@ -66,16 +66,16 @@ func TestEncodeStd(t *testing.T) {
 }
 
 func TestEncode(t *testing.T) {
-	result := percent.Encode(bytes.Buffer(LoremIpsum))
+	result := percent.Encode(bytes.BufferFromString(LoremIpsum)).String()
 
-	if string(result) != LoremIpsumPercent {
-		t.Fatalf(TestFailed, LoremIpsumPercent, string(result))
+	if result != LoremIpsumPercent {
+		t.Fatalf(TestFailed, LoremIpsumPercent, result)
 	}
 
-	result = percent.Encode(bytes.Buffer(USSR))
+	result = percent.Encode(bytes.BufferFromString(USSR)).String()
 
-	if string(result) != USSRPercent {
-		t.Fatalf(TestFailed, USSRPercent, string(result))
+	if result != USSRPercent {
+		t.Fatalf(TestFailed, USSRPercent, result)
 	}
 }
 
@@ -109,22 +109,22 @@ func TestDecodeStd(t *testing.T) {
 }
 
 func TestDecode(t *testing.T) {
-	result := percent.Decode(bytes.Buffer(LoremIpsumPercent))
+	result := percent.Decode(bytes.BufferFromString(LoremIpsumPercent)).String()
 
-	if string(result) != LoremIpsum {
-		t.Fatalf(TestFailed, LoremIpsum, string(result))
+	if result != LoremIpsum {
+		t.Fatalf(TestFailed, LoremIpsum, result)
 	}
 
-	result = percent.Decode(bytes.Buffer(LoremIpsumPlus))
+	result = percent.Decode(bytes.BufferFromString(LoremIpsumPlus)).String()
 
-	if string(result) != LoremIpsum {
-		t.Fatalf(TestFailed, LoremIpsum, string(result))
+	if result != LoremIpsum {
+		t.Fatalf(TestFailed, LoremIpsum, result)
 	}
 
-	result = percent.Decode(bytes.Buffer(USSRPercent))
+	result = percent.Decode(bytes.BufferFromString(USSRPercent)).String()
 
-	if string(result) != USSR {
-		t.Fatalf(TestFailed, USSR, string(result))
+	if result != USSR {
+		t.Fatalf(TestFailed, USSR, result)
 	}
 }
 
@@ -136,7 +136,7 @@ func BenchmarkEncodeStdLoremIpsum(b *testing.B) {
 
 func BenchmarkEncodeLoremIpsum(b *testing.B) {
 	for i := 0; i < b.N; i += 1 {
-		_ = percent.Encode(bytes.Buffer(LoremIpsum))
+		_ = percent.Encode(bytes.BufferFromString(LoremIpsum))
 	}
 }
 
@@ -148,7 +148,7 @@ func BenchmarkEncodeStdUSSR(b *testing.B) {
 
 func BenchmarkEncodeUSSR(b *testing.B) {
 	for i := 0; i < b.N; i += 1 {
-		_ = percent.Encode(bytes.Buffer(USSR))
+		_ = percent.Encode(bytes.BufferFromString(USSR))
 	}
 }
 
@@ -165,7 +165,7 @@ func BenchmarkDecodeStdLoremIpsum(b *testing.B) {
 
 func BenchmarkDecodeLoremIpsum(b *testing.B) {
 	for i := 0; i < b.N; i += 1 {
-		_ = percent.Decode(bytes.Buffer(LoremIpsumPercent))
+		_ = percent.Decode(bytes.BufferFromString(LoremIpsumPercent))
 	}
 }
 
@@ -182,6 +182,6 @@ func BenchmarkDecodeStdUSSR(b *testing.B) {
 
 func BenchmarkDecodeUSSR(b *testing.B) {
 	for i := 0; i < b.N; i += 1 {
-		_ = percent.Decode(bytes.Buffer(USSRPercent))
+		_ = percent.Decode(bytes.BufferFromString(USSRPercent))
 	}
 }

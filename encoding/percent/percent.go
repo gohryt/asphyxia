@@ -5,7 +5,7 @@ import (
 	"github.com/gohryt/asphyxia/encoding/hex"
 )
 
-func Encode(source bytes.Buffer) bytes.Buffer {
+func Encode(source *bytes.Buffer) *bytes.Buffer {
 	var (
 		i        int
 		j        int
@@ -13,8 +13,10 @@ func Encode(source bytes.Buffer) bytes.Buffer {
 		b        byte
 	)
 
-	for i < len(source) {
-		b = source[i]
+	sourceData := source.Data
+
+	for i < len(sourceData) {
+		b = sourceData[i]
 
 		if ShouldEscapeTable[int(b)] != 0 {
 			capacity += 3
@@ -25,38 +27,38 @@ func Encode(source bytes.Buffer) bytes.Buffer {
 		i += 1
 	}
 
-	target := make(bytes.Buffer, capacity)
-
-	if capacity > len(source) {
-		i = 0
-
-		for i < len(source) {
-			b = source[i]
-
-			if ShouldEscapeTable[int(b)] != 0 {
-				target[j+2] = hex.Upper[b&0xf]
-				target[j+1] = hex.Upper[b>>4]
-				target[j] = '%'
-
-				j += 3
-			} else {
-				target[j] = b
-
-				j += 1
-			}
-
-			i += 1
-		}
-
-		target = target[:j]
-	} else {
-		copy(target, source)
+	if capacity == len(sourceData) {
+		return source.Clone()
 	}
 
-	return target
+	targetData := make([]byte, capacity)
+
+	i = 0
+
+	for i < len(sourceData) {
+		b = sourceData[i]
+
+		if ShouldEscapeTable[int(b)] != 0 {
+			targetData[j+2] = hex.Upper[b&0xf]
+			targetData[j+1] = hex.Upper[b>>4]
+			targetData[j] = '%'
+
+			j += 3
+		} else {
+			targetData[j] = b
+
+			j += 1
+		}
+
+		i += 1
+	}
+
+	return &bytes.Buffer{
+		Data: targetData,
+	}
 }
 
-func Decode(source bytes.Buffer) bytes.Buffer {
+func Decode(source *bytes.Buffer) *bytes.Buffer {
 	var (
 		i        int
 		j        int
@@ -67,56 +69,62 @@ func Decode(source bytes.Buffer) bytes.Buffer {
 		x1 byte
 	)
 
-	for i < len(source) {
+	sourceData := source.Data
+
+	for i < len(sourceData) {
 		capacity += 1
 
-		if source[i] == '%' {
+		if sourceData[i] == '%' {
 			i += 3
 		} else {
 			i += 1
 		}
 	}
 
-	target := make(bytes.Buffer, capacity)
+	if i == capacity {
+		return source.Clone()
+	}
 
-	if i > capacity {
-		i = 0
-		capacity = 0
+	targetData := make([]byte, capacity)
 
-		for i < len(source) {
-			b = source[i]
+	i = 0
+	capacity = 0
 
-			if b == '%' {
-				j = i + 2
+	for i < len(sourceData) {
+		b = sourceData[i]
 
-				if j >= len(source) {
-					copy(target[capacity:], source[i:])
-					return target
-				}
+		if b == '%' {
+			j = i + 2
 
-				x2 = hex.Hex2IntTable[source[j]]
-				x1 = hex.Hex2IntTable[source[i+1]]
-
-				if x1 == 16 || x2 == 16 {
-					target[capacity] = '%'
-				} else {
-					target[capacity] = x1<<4 | x2
-					i = j
-				}
-			} else {
-				if b == '+' {
-					target[capacity] = ' '
-				} else {
-					target[capacity] = b
+			if j >= len(sourceData) {
+				copy(targetData[capacity:], sourceData[i:])
+				return &bytes.Buffer{
+					Data: targetData,
 				}
 			}
 
-			i += 1
-			capacity += 1
+			x2 = hex.HexToIntTable[sourceData[j]]
+			x1 = hex.HexToIntTable[sourceData[i+1]]
+
+			if x1 == 16 || x2 == 16 {
+				targetData[capacity] = '%'
+			} else {
+				targetData[capacity] = x1<<4 | x2
+				i = j
+			}
+		} else {
+			if b == '+' {
+				targetData[capacity] = ' '
+			} else {
+				targetData[capacity] = b
+			}
 		}
-	} else {
-		copy(target, source)
+
+		i += 1
+		capacity += 1
 	}
 
-	return target
+	return &bytes.Buffer{
+		Data: targetData,
+	}
 }

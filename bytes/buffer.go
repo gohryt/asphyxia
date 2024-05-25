@@ -8,54 +8,68 @@ import (
 )
 
 type (
-	Buffer []byte
+	Buffer struct {
+		Data []byte
+	}
 )
 
-func (buffer *Buffer) Reset() {
-	*buffer = (*buffer)[:0]
+func BufferFrom(value []byte) *Buffer {
+	return &Buffer{
+		Data: value,
+	}
+}
+
+func BufferFromString(value string) *Buffer {
+	return &Buffer{
+		Data: []byte(value),
+	}
 }
 
 func (buffer *Buffer) String() string {
-	return string(*buffer)
+	return string(buffer.Data)
+}
+
+func (buffer *Buffer) Reset() {
+	buffer.Data = buffer.Data[:0]
 }
 
 func (buffer *Buffer) Clone() *Buffer {
-	clone := make(Buffer, len(*buffer))
-	copy(clone, *buffer)
-	return &clone
+	return &Buffer{
+		Data: append([]byte(nil), buffer.Data...),
+	}
 }
 
 func (buffer *Buffer) Set(value []byte) {
-	*buffer = append((*buffer)[:0], value...)
+	buffer.Data = append(buffer.Data[:0], value...)
 }
 
 func (buffer *Buffer) SetString(value string) {
-	*buffer = append((*buffer)[:0], value...)
+	buffer.Data = append(buffer.Data[:0], value...)
 }
 
 func (buffer *Buffer) Write(value []byte) (n int, err error) {
-	*buffer = append(*buffer, value...)
+	buffer.Data = append(buffer.Data, value...)
 	return len(value), nil
 }
 
 func (buffer *Buffer) WriteString(value string) (n int, err error) {
-	*buffer = append(*buffer, value...)
+	buffer.Data = append(buffer.Data, value...)
 	return len(value), nil
 }
 
 func (buffer *Buffer) WriteByte(value byte) (err error) {
-	*buffer = append(*buffer, value)
-	return
+	buffer.Data = append(buffer.Data, value)
+	return nil
 }
 
 func (buffer *Buffer) WriteRune(value rune) (n int, err error) {
-	slice := *buffer
+	slice := buffer.Data
 	l := len(slice)
 
 	size := l + utf8.UTFMax
 
 	if size > cap(slice) {
-		reallocation := make(Buffer, size)
+		reallocation := make([]byte, size)
 		copy(reallocation, slice)
 
 		slice = reallocation
@@ -63,12 +77,12 @@ func (buffer *Buffer) WriteRune(value rune) (n int, err error) {
 
 	n = utf8.EncodeRune(slice[l:size], value)
 
-	*buffer = slice[:(l + n)]
-	return
+	buffer.Data = slice[:(l + n)]
+	return n, nil
 }
 
 func (buffer *Buffer) ReadFrom(from io.Reader) (n int64, err error) {
-	slice := *buffer
+	slice := buffer.Data
 	l := len(slice)
 	r := 0
 
@@ -83,7 +97,7 @@ reallocation:
 		size *= 2
 	}
 
-	reallocation := make(Buffer, size)
+	reallocation := make([]byte, size)
 	copy(reallocation, slice)
 
 	slice = reallocation
@@ -104,6 +118,6 @@ read:
 		err = nil
 	}
 
-	*buffer = slice[:l]
-	return
+	buffer.Data = slice[:l]
+	return n, err
 }
