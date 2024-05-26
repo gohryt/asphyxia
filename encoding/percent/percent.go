@@ -72,13 +72,15 @@ func Decode(source *bytes.Buffer) *bytes.Buffer {
 	sourceData := source.Data
 
 	for i < len(sourceData) {
-		capacity += 1
+		j = i + 2
 
-		if sourceData[i] == '%' {
+		if sourceData[i] == '%' && j < len(sourceData) {
 			i += 3
 		} else {
 			i += 1
 		}
+
+		capacity += 1
 	}
 
 	if i == capacity {
@@ -93,16 +95,9 @@ func Decode(source *bytes.Buffer) *bytes.Buffer {
 	for i < len(sourceData) {
 		b = sourceData[i]
 
-		if b == '%' {
-			j = i + 2
+		j = i + 2
 
-			if j >= len(sourceData) {
-				copy(targetData[capacity:], sourceData[i:])
-				return &bytes.Buffer{
-					Data: targetData,
-				}
-			}
-
+		if b == '%' && j < len(sourceData) {
 			x2 = hex.HexToIntTable[sourceData[j]]
 			x1 = hex.HexToIntTable[sourceData[i+1]]
 
@@ -112,12 +107,10 @@ func Decode(source *bytes.Buffer) *bytes.Buffer {
 				targetData[capacity] = x1<<4 | x2
 				i = j
 			}
+		} else if b == '+' {
+			targetData[capacity] = ' '
 		} else {
-			if b == '+' {
-				targetData[capacity] = ' '
-			} else {
-				targetData[capacity] = b
-			}
+			targetData[capacity] = b
 		}
 
 		i += 1
