@@ -72,9 +72,10 @@ func Decode(source *bytes.Buffer) *bytes.Buffer {
 	sourceData := source.Data
 
 	for i < len(sourceData) {
+		b = sourceData[i]
 		j = i + 2
 
-		if sourceData[i] == '%' && j < len(sourceData) {
+		if b == '%' && j < len(sourceData) {
 			i += 3
 		} else {
 			i += 1
@@ -94,7 +95,6 @@ func Decode(source *bytes.Buffer) *bytes.Buffer {
 
 	for i < len(sourceData) {
 		b = sourceData[i]
-
 		j = i + 2
 
 		if b == '%' && j < len(sourceData) {
