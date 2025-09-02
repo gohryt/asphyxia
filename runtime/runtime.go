@@ -17,7 +17,7 @@ type (
 		Length int
 	}
 
-	InterfaceEmpty struct {
+	Any struct {
 		Type unsafe.Pointer
 		Data unsafe.Pointer
 	}

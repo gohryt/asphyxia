@@ -108,13 +108,14 @@ read:
 	n += int64(r)
 	l += r
 
-	if err == nil {
+	switch err {
+	case nil:
 		if l < size {
 			goto read
 		}
 
 		goto reallocation
-	} else if err == io.EOF {
+	case io.EOF:
 		err = nil
 	}
 

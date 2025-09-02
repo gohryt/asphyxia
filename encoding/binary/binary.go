@@ -4,11 +4,7 @@ func BigEndianCopyUint16(to []byte, from ...uint16) int {
 	i := 0
 	j := 0
 
-	count := len(to) / 2
-
-	if len(from) < count {
-		count = len(from)
-	}
+	count := min(len(from), len(to)/2)
 
 	for i < count {
 		element := from[i]
